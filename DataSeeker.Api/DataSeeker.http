@@ -1,0 +1,6 @@
+@DataSeeker_HostAddress = http://localhost:5031
+
+GET {{DataSeeker_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
