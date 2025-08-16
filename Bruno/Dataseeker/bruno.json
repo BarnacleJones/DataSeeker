@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Dataseeker",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

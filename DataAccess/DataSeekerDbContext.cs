@@ -1,6 +1,12 @@
-namespace DataSeeker.Data;
+using Entities.Models;
+using Microsoft.EntityFrameworkCore;
 
-public class DataSeekerDbContext
+namespace DataAccess;
+
+public class DataSeekerDbContext(DbContextOptions<DataSeekerDbContext> options) : DbContext(options)
 {
-    
+    public DbSet<UploadLine> UploadLines { get; set; }
+    public DbSet<UploadFile> UploadFiles { get; set; }
+    public DbSet<DownloadFile> DownloadFiles { get; set; }
+
 }

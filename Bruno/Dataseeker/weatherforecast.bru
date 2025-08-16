@@ -1,0 +1,15 @@
+meta {
+  name: weatherforecast
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:5031/weatherforecast
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
