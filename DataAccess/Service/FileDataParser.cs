@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Service;
 
-public class FileDataParser
+public class FileDataParser : IFileDataParser
 {
     private readonly DataSeekerDbContext _context;
 
@@ -12,30 +12,29 @@ public class FileDataParser
         _context = context;
     }
 
-    public void Parse()
+    public Task Parse()
     {
         var unprocessedUploadLinesDb = _context.UploadLines.Where(x => !x.ProcessedFilePaths).AsQueryable();
-        
-        var fullPathsAndFileIds = unprocessedUploadLinesDb.
-            Select(x => new { FileId = x.UploadFileId, Path = x.FileName })
-            .ToDictionary(x => x.FileId, y => y.Path);
+
+        var fullPathsAndFileIds = unprocessedUploadLinesDb
+            .Select(x => new { FileId = x.UploadFileId, Path = x.FileName })
+            .ToList();
         
         var uploadFileIdsThatHaveBeenProcessed = new List<int>(fullPathsAndFileIds.Count);
         
         foreach (var uploadLine in fullPathsAndFileIds)
         {
-            var filePath = uploadLine.Value;
+            var filePath = uploadLine.Path;
             if (filePath != null)
             {
                 var idk = ProcessFileFolderData(filePath);
-                uploadFileIdsThatHaveBeenProcessed.Add(uploadLine.Key);
+                uploadFileIdsThatHaveBeenProcessed.Add(uploadLine.FileId);
             }
         }
         
-        var uploadLinesToUpdate = _context.UploadLines.Where(x => uploadFileIdsThatHaveBeenProcessed.Contains(x.UploadFileId))
-            .AsQueryable();
+        var uploadLinesToUpdate = _context.UploadLines.Where(x => uploadFileIdsThatHaveBeenProcessed.Contains(x.UploadFileId)).Distinct();
         uploadLinesToUpdate.ForEachAsync(x => x.ProcessedFilePaths = true);
-        _context.SaveChanges();
+        return _context.SaveChangesAsync();
         
     }
 
