@@ -1,6 +1,6 @@
 namespace DataAccess;
 
-public interface IUploadService
+public interface IFileReaderToDataService
 {
     Task ProcessUploadAsync(string filePath);
     Task ProcessDownloadAsync(string filePath);

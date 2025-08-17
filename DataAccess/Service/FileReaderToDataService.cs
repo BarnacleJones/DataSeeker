@@ -4,8 +4,15 @@ using Entities.Models;
 
 namespace DataAccess.Service;
 
-public partial class UploadService(DataSeekerDbContext context) : IUploadService
+public class FileReaderToDataService : IFileReaderToDataService
 {
+    private readonly DataSeekerDbContext _context;
+
+    public FileReaderToDataService(DataSeekerDbContext context)
+    {
+        _context = context;
+    }
+
     public async Task ProcessUploadAsync(string filePath)
     {
         if (!File.Exists(filePath))
@@ -51,8 +58,8 @@ public partial class UploadService(DataSeekerDbContext context) : IUploadService
             uploadFile.UploadLines.Add(uploadLine);
         }
 
-        context.UploadFiles.Add(uploadFile);
-        await context.SaveChangesAsync();
+        _context.UploadFiles.Add(uploadFile);
+        await _context.SaveChangesAsync();
     }
 
     public async Task ProcessDownloadAsync(string filePath)
@@ -98,12 +105,20 @@ public partial class UploadService(DataSeekerDbContext context) : IUploadService
             downloadFile.DownloadLines.Add(downloadLine);
         }
 
-        context.DownloadFiles.Add(downloadFile);
-        await context.SaveChangesAsync();
+        _context.DownloadFiles.Add(downloadFile);
+        await _context.SaveChangesAsync();
     }
 
-    [GeneratedRegex(@"^(?<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) Upload (started|finished): user (?<user>.*?), IP address \('(?<ip>[\d\.]+)', \d+\), file (?<filepath>.+)$")]
-    private static partial Regex UploadFileRegex();
-    [GeneratedRegex(@"^(?<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) Download (started|finished): user (?<user>.*?), file (?<filepath>.+)$")]
-    private static partial Regex DownloadFileRegex();
+    private Regex UploadFileRegex()
+    {
+        var regex = 
+        @"^(?<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) Upload (started|finished): user (?<user>.*?), IP address \('(?<ip>[\d\.]+)', \d+\), file (?<filepath>.+)$";
+        return new Regex(regex, RegexOptions.Compiled);
+        
+    }
+    private Regex DownloadFileRegex()
+    {
+        var regex = @"^(?<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) Download (started|finished): user (?<user>.*?), file (?<filepath>.+)$";
+        return new Regex(regex, RegexOptions.Compiled);
+    }
 }

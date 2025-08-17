@@ -1,0 +1,23 @@
+meta {
+  name: IngestLogs
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/ingest-logs
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {}
+}
+
+settings {
+  encodeUrl: false
+}

@@ -1,4 +1,4 @@
-namespace Worker;
+namespace Service;
 
 public class LogIngestOptions
 {

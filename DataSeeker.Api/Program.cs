@@ -1,6 +1,8 @@
 using DataAccess;
 using DataAccess.Service;
 using Microsoft.EntityFrameworkCore;
+using Service;
+using Service.Contract;
 using Worker;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,44 +16,21 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataSeekerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<IUploadService, UploadService>();
+builder.Services.AddScoped<IFileReaderToDataService, FileReaderToDataService>();
 builder.Services.Configure<LogIngestOptions>(builder.Configuration.GetSection("LogIngest"));
-
-builder.Services.AddHostedService<LogIngester>();
+builder.Services.AddScoped<ILogIngestionService, LogIngestionService>();
+builder.Services.AddScoped<LogIngester>();
 
 var app = builder.Build();
 
 
-// Apply any pending EF Core migrations at startup
-// using (var scope = app.Services.CreateScope())
-// {
-//     var db = scope.ServiceProvider.GetRequiredService<DataSeekerDbContext>();
-//     db.Database.Migrate();
-// }
-using var scope = app.Services.CreateScope();
-var db = scope.ServiceProvider.GetRequiredService<DataSeekerDbContext>();
-
-var retries = 10;
-while (retries > 0)
+// Apply migrations automatically
+using (var scope = app.Services.CreateScope())
 {
-    try
-    {
-        db.Database.Migrate();
-        break; // Success
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database not ready yet: {ex.Message}");
-        retries--;
-        Thread.Sleep(3000); // wait 3 seconds
-    }
+    var db = scope.ServiceProvider.GetRequiredService<DataSeekerDbContext>();
+    db.Database.Migrate();
 }
 
-if (retries == 0)
-{
-    Console.WriteLine("Could not connect to the database after multiple attempts.");
-    throw new Exception("Database not available");
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -77,11 +56,17 @@ app.MapGet("/weatherforecast", () =>
                     summaries[Random.Shared.Next(summaries.Length)]
                 ))
             .ToArray();
+        
         return forecast;
     })
     .WithName("GetWeatherForecast")
     .WithOpenApi();
 
+app.MapPost("/ingest-logs", async (LogIngester ingester) =>
+{
+    await ingester.IngestLogs();
+    return Results.Ok("Log ingestion triggered");
+});
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)

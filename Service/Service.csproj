@@ -7,7 +7,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Contract\" />
+      <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+        <HintPath>..\..\..\.nuget\packages\microsoft.extensions.logging.abstractions\9.0.8\lib\net8.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+      </Reference>
+      <Reference Include="Microsoft.Extensions.Options">
+        <HintPath>..\..\..\.nuget\packages\microsoft.extensions.options\9.0.8\lib\net8.0\Microsoft.Extensions.Options.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
     </ItemGroup>
 
 </Project>
