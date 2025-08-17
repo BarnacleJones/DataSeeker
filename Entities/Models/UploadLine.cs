@@ -8,5 +8,6 @@ public class UploadLine
     public string? IpAddress { get; set; }
     public string? FileName { get; set; }
     public int UploadFileId  { get; set; }
+    public bool ProcessedFilePaths { get; set; }
     public UploadFile? UploadFile { get; set; }
 }
