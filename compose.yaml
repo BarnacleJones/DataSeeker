@@ -21,6 +21,8 @@ services:
     ports:
       - "8080:8080"
       - "5005:5005"
+    volumes:
+      - "/home/ben/Documents/slsk logs:/logs"
     depends_on:
       db:
         condition: service_healthy
