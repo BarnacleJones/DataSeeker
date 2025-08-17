@@ -1,40 +1,21 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Service.Contract;
 
 namespace Worker;
 
-public class LogIngester : BackgroundService
+public class LogIngester
 {
-    private readonly ILogIngestionService _logIngestionService;
-    private readonly ILogger<LogIngester> _logger;
-    private readonly TimeSpan _interval = TimeSpan.FromMinutes(1);
+    private readonly IServiceProvider _provider;
 
-    public LogIngester(ILogIngestionService logIngestionService, ILogger<LogIngester> logger)
+    public LogIngester(IServiceProvider provider)
     {
-        _logIngestionService = logIngestionService;
-        _logger = logger;
+        _provider = provider;
     }
 
     public async Task IngestLogs()
     {
-        await _logIngestionService.IngestLogsAsync();
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await _logIngestionService.IngestLogsAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while processing logs");
-            }
-
-            await Task.Delay(_interval, stoppingToken);
-        }
+        using var scope = _provider.CreateScope();
+        var ingestionService = scope.ServiceProvider.GetRequiredService<ILogIngestionService>();
+        await ingestionService.IngestLogsAsync();
     }
 }

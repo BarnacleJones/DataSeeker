@@ -17,9 +17,9 @@ builder.Services.AddDbContext<DataSeekerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IFileReaderToDataService, FileReaderToDataService>();
-builder.Services.Configure<LogIngestOptions>(builder.Configuration.GetSection("LogIngest"));
 builder.Services.AddScoped<ILogIngestionService, LogIngestionService>();
-builder.Services.AddScoped<LogIngester>();
+builder.Services.Configure<LogIngestOptions>(builder.Configuration.GetSection("LogIngest"));
+builder.Services.AddSingleton<LogIngester>();
 
 var app = builder.Build();
 
