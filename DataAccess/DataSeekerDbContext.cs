@@ -12,6 +12,15 @@ public class DataSeekerDbContext : DbContext
     public DbSet<UploadLine> UploadLines { get; set; }
     public DbSet<UploadFile> UploadFiles { get; set; }
     public DbSet<DownloadFile> DownloadFiles { get; set; }
+    public DbSet<Folder> Folders { get; set; }
+    public DbSet<FileEntry> Files { get; set; }
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Folder>()
+            .HasOne(f => f.Parent)
+            .WithMany(f => f.SubFolders)
+            .HasForeignKey(f => f.ParentId);
+    }
 }
 
 namespace DataAccess

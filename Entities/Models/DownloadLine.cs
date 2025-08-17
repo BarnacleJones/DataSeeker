@@ -9,4 +9,5 @@ public class DownloadLine
 
     public int DownloadFileId { get; set; }
     public DownloadFile? DownloadFile { get; set; }
+    
 }
