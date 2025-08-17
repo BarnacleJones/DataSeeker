@@ -38,13 +38,8 @@ EXPOSE 8081
 # Expose remote debug port (optional)
 EXPOSE 5005
 
-# Entry point
-# Use dotnet watch in Debug mode, plain DLL in Release
-ENTRYPOINT ["sh", "-c", "\
-  if [ \"$BUILD_MODE\" = \"Debug\" ]; then \
-      dotnet watch run --urls http://0.0.0.0:8080; \
-  else \
-      dotnet DataSeeker.Api.dll; \
-  fi \
-"]
+# Needed for Rider remote debugger
+ENV DOTNET_USE_POLLING_FILE_WATCHER 1
+ENV DOTNET_HOST_PATH /usr/share/dotnet/dotnet
 
+ENTRYPOINT ["dotnet", "DataSeeker.Api.dll"]

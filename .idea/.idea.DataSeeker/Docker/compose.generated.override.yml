@@ -1,0 +1,20 @@
+# This is a generated file. Not intended for manual editing.
+services:
+  api:
+    build:
+      context: "/home/ben/Projects/DataSeeker"
+      dockerfile: "Dockerfile"
+      target: "build"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/DataSeeker.Api.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+    image: "dataseeker.api:dev"
+    ports: []
+    volumes:
+    - "/home/ben/Projects/DataSeeker/DataSeeker.Api:/app:rw"
+    - "/home/ben/Projects/DataSeeker:/src:rw"
+    - "/home/ben/.nuget/packages:/root/.nuget/packages"
+    working_dir: "/app"
