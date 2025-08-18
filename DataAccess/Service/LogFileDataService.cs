@@ -8,7 +8,6 @@ namespace DataAccess.Service;
 public class LogFileDataService : ILogFileDataService
 {
     private readonly DataSeekerDbContext _context;
-
     public LogFileDataService(DataSeekerDbContext context)
     {
         _context = context;
@@ -35,28 +34,45 @@ public class LogFileDataService : ILogFileDataService
                 throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
         }
     }
-    
     private async Task PersistFinishedUploadLogFile(string filePath, LogFile newLogFileRecord)
     {
+        var folderCache = await _context.LocalFolders
+            .Include(f => f.ParentFolder)
+            .ToListAsync();
+
+        var root = folderCache.FirstOrDefault(f => f.Name == "ROOT" && f.ParentFolderId == null);
+        if (root == null)
+        {
+            root = new LocalFolder { Name = "ROOT" };
+            _context.LocalFolders.Add(root);
+            await _context.SaveChangesAsync();
+            folderCache.Add(root);
+        }
+
+        var folderDict = folderCache.ToDictionary(
+            f => BuildPath(f),
+            f => f
+        );
+
+        var newFolders = new List<LocalFolder>();
+        var newFiles = new List<UploadedFile>();
+
         using var stream = new StreamReader(filePath);
         while (await stream.ReadLineAsync() is { } logLine)
         {
             if (string.IsNullOrWhiteSpace(logLine)) continue;
-            
-            var finishedUploadLine = FinishedUploadLineRegex().Match(logLine);
 
-            if (!finishedUploadLine.Success) continue;
+            var match = FinishedUploadLineRegex().Match(logLine);
+            if (!match.Success) continue;
 
-            var uploadTimestamp = finishedUploadLine.Groups["timestamp"].Value;
-            var userUploadedTo = finishedUploadLine.Groups["user"].Value;
-            var localFullFilePath = finishedUploadLine.Groups["filepath"].Value;
-            // var ip = match.Groups["ip"].Value; //dont care about ip at this stage, but its here
-            
-            var localFilePathPartsArray = localFullFilePath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
-            
-            var fileName = localFilePathPartsArray.Last();
+            var uploadTimestamp = match.Groups["timestamp"].Value;
+            var userUploadedTo = match.Groups["user"].Value;
+            var localFullFilePath = match.Groups["filepath"].Value;
+
+            var pathParts = localFullFilePath.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var fileName = pathParts.Last();
             var fileType = Path.GetExtension(fileName).TrimStart('.').ToLower();
-            
+
             var parsed = DateTime.TryParseExact(
                 uploadTimestamp,
                 "MM/dd/yy HH:mm:ss",
@@ -74,23 +90,47 @@ public class LogFileDataService : ILogFileDataService
             };
 
             newLogFileRecord.LogLines.Add(logLineForUpload);
+
+            //Build folder heirarchy todo split out into method
+            LocalFolder parent = root;
+            string parentPath = BuildPath(root);
+
+            for (int i = 0; i < pathParts.Length - 1; i++)
+            {
+                var folderName = pathParts[i];
+                var currentPath = $"{parentPath}{Path.DirectorySeparatorChar}{folderName}";
+
+                if (!folderDict.TryGetValue(currentPath, out var folder))
+                {
+                    folder = new LocalFolder
+                    {
+                        Name = folderName,
+                        ParentFolder = parent
+                    };
+                    folderDict[currentPath] = folder;
+                    newFolders.Add(folder);
+                }
+
+                parent = folder;
+                parentPath = currentPath;
+            }
+
+            var uploadedFile = new UploadedFile
+            {
+                FileName = fileName,
+                ContainingFolder = parent
+            };
+
+            newFiles.Add(uploadedFile);
+            logLineForUpload.UploadedFile = uploadedFile;
         }
+
+        _context.LocalFolders.AddRange(newFolders);
+        _context.UploadedFiles.AddRange(newFiles);
         _context.LogFiles.Add(newLogFileRecord);
+
         await _context.SaveChangesAsync();
-        
-        var logFileAndLines = _context.LogFiles
-            .Include(x => x.LogLines)
-            .FirstOrDefault(f => f.LogFileName == newLogFileRecord.LogFileName);
-
-        if (logFileAndLines != null)
-        {
-            //once all log lines are stored, pass the log file lines
-            //to associate the upload line to an uploadedFile record
-            await AssociateLogFileLinesToUploadFilesAndLocalFolders(logFileAndLines.LogLines);
-        }
-
     }
-
     private async Task PersistFinishedDownloadLogFile(string filePath, LogFile logFile)
     {
         using var stream = new StreamReader(filePath);
@@ -113,7 +153,7 @@ public class LogFileDataService : ILogFileDataService
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
                 out var parsedDate
             );
-            var downloadedFilePathPartsArray = filepath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+            var downloadedFilePathPartsArray = filepath.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
             
             var fileName = downloadedFilePathPartsArray.Last();
             var fileType = Path.GetExtension(fileName).TrimStart('.').ToLower();
@@ -132,91 +172,21 @@ public class LogFileDataService : ILogFileDataService
         _context.LogFiles.Add(logFile);
         await _context.SaveChangesAsync();
     }
-
-    private async Task AssociateLogFileLinesToUploadFilesAndLocalFolders(List<LogLine> uploadLogLines)
-    {
-        foreach (var uploadLine in uploadLogLines)
-        {
-            var filePathForLocalFileUploaded = uploadLine.FullFilePath;
-            if (!string.IsNullOrWhiteSpace(filePathForLocalFileUploaded))
-            {
-                await ProcessLocalFileFolderData(filePathForLocalFileUploaded, uploadLine.LogLineId);
-            }
-        }
-    }
-
-    private async Task ProcessLocalFileFolderData(string uploadedFilepath, int logLineId)
-    {
-        var folders = uploadedFilepath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
-        var fileName = folders.Last();
-        LocalFolder? parent = null;
-
-        // Walk through folder hierarchy
-        for (int i = 0; i < folders.Length - 1; i++)
-        {
-            string folderName = folders[i];
-            var folderQueryable = _context.LocalFolders.AsQueryable();
-
-            if (parent != null)
-            {
-                var parent1 = parent;
-                folderQueryable = folderQueryable.Where(x => x.ParentFolderId == parent1.LocalFolderId);
-            }
-            var localFolder = await folderQueryable.FirstOrDefaultAsync(f => f.Name == folderName);
-
-            if (localFolder == null)
-            {
-                localFolder = new LocalFolder
-                {
-                    Name = folderName, 
-                    ParentFolder = parent
-                };
-                _context.LocalFolders.Add(localFolder);
-                
-                await _context.SaveChangesAsync(); // Save to get FolderId
-            }
-
-            parent = localFolder;
-        }
-
-        //create root if no parent exists
-        if (parent == null)
-        {
-            parent = await _context.LocalFolders.FirstOrDefaultAsync(f => f.Name == "ROOT");
-            if (parent == null)
-            {
-                parent = new LocalFolder { Name = "ROOT" };
-                _context.LocalFolders.Add(parent);
-                await _context.SaveChangesAsync();
-            }
-        }
-        
-        var uploadedFile = new UploadedFile()
-        {
-            FileName = fileName,
-            ContainingFolder = parent
-        };
-
-        _context.UploadedFiles.Add(uploadedFile);
-        await _context.SaveChangesAsync();
-
-        //Associate log line with uploaded file
-        var logLine = await _context.LogLines.Where(x => x.LogLineId == logLineId).FirstOrDefaultAsync();
-        
-        if (logLine != null) logLine.UploadedFile = uploadedFile;
-    }
-   
     private Regex FinishedUploadLineRegex()
     {
-        var regex = 
-        @"^(?<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) Upload finished: user (?<user>.*?), IP address \('(?<ip>[\d\.]+)', \d+\), file (?<filepath>.+)$";
+        var regex =
+            @"^(?<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) Upload finished: user (?<user>.*?), IP address (?:(?:\('(?<ip>[\d\.]+)', \d+\))|None), file (?<filepath>.+)$";
         return new Regex(regex, RegexOptions.Compiled);
-        
     }
     private Regex FinishedDownloadLineRegex()
     {
         var regex = @"^(?<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) Download finished: user (?<user>.*?), file (?<filepath>.+)$";
         return new Regex(regex, RegexOptions.Compiled);
     }
-
+    private string BuildPath(LocalFolder folder)
+    {
+        return folder.ParentFolder == null
+            ? folder.Name
+            : $"{BuildPath(folder.ParentFolder)}{Path.DirectorySeparatorChar}{folder.Name}";
+    }
 }

@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(DataSeekerDbContext))]
-    [Migration("20250818015117_InitialMigration")]
+    [Migration("20250818030218_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -120,9 +120,6 @@ namespace DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UploadedFileId"));
 
-                    b.Property<int?>("ContainingFolderId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -130,13 +127,16 @@ namespace DataAccess.Migrations
                     b.Property<int?>("LocalFolderId")
                         .HasColumnType("integer");
 
-                    b.HasKey("UploadedFileId");
+                    b.Property<int?>("LocalFolderId1")
+                        .HasColumnType("integer");
 
-                    b.HasIndex("ContainingFolderId");
+                    b.HasKey("UploadedFileId");
 
                     b.HasIndex("FileName");
 
                     b.HasIndex("LocalFolderId");
+
+                    b.HasIndex("LocalFolderId1");
 
                     b.ToTable("UploadedFiles");
                 });
@@ -171,11 +171,11 @@ namespace DataAccess.Migrations
                 {
                     b.HasOne("Entities.Models.LocalFolder", "ContainingFolder")
                         .WithMany()
-                        .HasForeignKey("ContainingFolderId");
+                        .HasForeignKey("LocalFolderId");
 
                     b.HasOne("Entities.Models.LocalFolder", null)
                         .WithMany("UploadedFiles")
-                        .HasForeignKey("LocalFolderId");
+                        .HasForeignKey("LocalFolderId1");
 
                     b.Navigation("ContainingFolder");
                 });

@@ -42,7 +42,7 @@ public class DataSeekerDbContext : DbContext
         modelBuilder.Entity<UploadedFile>()
             .HasOne(f => f.ContainingFolder)
             .WithMany()
-            .HasForeignKey(f => f.ContainingFolderId)
+            .HasForeignKey(f => f.LocalFolderId)
             .IsRequired(false);
         
         modelBuilder.Entity<UploadedFile>()

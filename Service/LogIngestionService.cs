@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -26,6 +27,7 @@ namespace Service
         public async Task IngestLogsAsync()
         {
             _logger.LogInformation("Log ingestion triggered.");
+            var timer = Stopwatch.StartNew();
 
             var dir = _options.Value.LogDirectory;
             var processedDir = Path.Combine(dir, "processed");
@@ -59,6 +61,8 @@ namespace Service
                     _logger.LogError(ex, "Error processing download file {File}", filePath);
                 }
             }
+            timer.Stop();
+            _logger.LogInformation("Log ingestion triggered in {Elapsed}.", timer.Elapsed);
         }
 
         private void MoveToProcessed(string originalPath, string processedDir)
