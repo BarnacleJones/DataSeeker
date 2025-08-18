@@ -4,7 +4,7 @@ public class UploadedFile
 {
     public int UploadedFileId { get; set; }
     public string FileName { get; set; } = null!;
-    public int FolderId { get; set; }
-    public LocalFolder ContainingFolder { get; set; } = null!;
+    public int? ContainingFolderId { get; set; }
+    public LocalFolder? ContainingFolder { get; set; } = null!; //nullable - can exist at root level
     public List<LogLine> LogLines { get; set; } = new List<LogLine>();
 }

@@ -40,8 +40,11 @@ public class DataSeekerDbContext : DbContext
             .IsUnique();
         
         modelBuilder.Entity<UploadedFile>()
-            .HasIndex(f => f.FolderId);
-
+            .HasOne(f => f.ContainingFolder)
+            .WithMany()
+            .HasForeignKey(f => f.ContainingFolderId)
+            .IsRequired(false);
+        
         modelBuilder.Entity<UploadedFile>()
             .HasIndex(f => f.FileName);
         

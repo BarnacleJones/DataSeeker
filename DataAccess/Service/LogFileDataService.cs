@@ -179,16 +179,28 @@ public class LogFileDataService : ILogFileDataService
             parent = localFolder;
         }
 
+        //create root if no parent exists
+        if (parent == null)
+        {
+            parent = await _context.LocalFolders.FirstOrDefaultAsync(f => f.Name == "ROOT");
+            if (parent == null)
+            {
+                parent = new LocalFolder { Name = "ROOT" };
+                _context.LocalFolders.Add(parent);
+                await _context.SaveChangesAsync();
+            }
+        }
+        
         var uploadedFile = new UploadedFile()
         {
             FileName = fileName,
-            ContainingFolder = parent!
+            ContainingFolder = parent
         };
 
         _context.UploadedFiles.Add(uploadedFile);
         await _context.SaveChangesAsync();
 
-        //finally associate logline to uploaded file
+        //Associate log line with uploaded file
         var logLine = await _context.LogLines.Where(x => x.LogLineId == logLineId).FirstOrDefaultAsync();
         
         if (logLine != null) logLine.UploadedFile = uploadedFile;

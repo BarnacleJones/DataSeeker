@@ -117,23 +117,23 @@ namespace DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UploadedFileId"));
 
-                    b.Property<int>("ContainingFolderLocalFolderId")
+                    b.Property<int?>("ContainingFolderId")
                         .HasColumnType("integer");
 
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("FolderId")
+                    b.Property<int?>("LocalFolderId")
                         .HasColumnType("integer");
 
                     b.HasKey("UploadedFileId");
 
-                    b.HasIndex("ContainingFolderLocalFolderId");
+                    b.HasIndex("ContainingFolderId");
 
                     b.HasIndex("FileName");
 
-                    b.HasIndex("FolderId");
+                    b.HasIndex("LocalFolderId");
 
                     b.ToTable("UploadedFiles");
                 });
@@ -167,10 +167,12 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("Entities.Models.UploadedFile", b =>
                 {
                     b.HasOne("Entities.Models.LocalFolder", "ContainingFolder")
+                        .WithMany()
+                        .HasForeignKey("ContainingFolderId");
+
+                    b.HasOne("Entities.Models.LocalFolder", null)
                         .WithMany("UploadedFiles")
-                        .HasForeignKey("ContainingFolderLocalFolderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("LocalFolderId");
 
                     b.Navigation("ContainingFolder");
                 });

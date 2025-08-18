@@ -52,18 +52,22 @@ namespace DataAccess.Migrations
                     UploadedFileId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FileName = table.Column<string>(type: "text", nullable: false),
-                    FolderId = table.Column<int>(type: "integer", nullable: false),
-                    ContainingFolderLocalFolderId = table.Column<int>(type: "integer", nullable: false)
+                    ContainingFolderId = table.Column<int>(type: "integer", nullable: true),
+                    LocalFolderId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UploadedFiles", x => x.UploadedFileId);
                     table.ForeignKey(
-                        name: "FK_UploadedFiles_LocalFolders_ContainingFolderLocalFolderId",
-                        column: x => x.ContainingFolderLocalFolderId,
+                        name: "FK_UploadedFiles_LocalFolders_ContainingFolderId",
+                        column: x => x.ContainingFolderId,
                         principalTable: "LocalFolders",
-                        principalColumn: "LocalFolderId",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "LocalFolderId");
+                    table.ForeignKey(
+                        name: "FK_UploadedFiles_LocalFolders_LocalFolderId",
+                        column: x => x.LocalFolderId,
+                        principalTable: "LocalFolders",
+                        principalColumn: "LocalFolderId");
                 });
 
             migrationBuilder.CreateTable(
@@ -96,9 +100,30 @@ namespace DataAccess.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_LocalFolders_Name",
+                table: "LocalFolders",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LocalFolders_ParentFolderId",
                 table: "LocalFolders",
                 column: "ParentFolderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocalFolders_ParentFolderId_Name",
+                table: "LocalFolders",
+                columns: new[] { "ParentFolderId", "Name" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LogFiles_TransferDirection",
+                table: "LogFiles",
+                column: "TransferDirection");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LogLines_FileType",
+                table: "LogLines",
+                column: "FileType");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LogLines_LogFileId",
@@ -111,9 +136,19 @@ namespace DataAccess.Migrations
                 column: "UploadedFileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UploadedFiles_ContainingFolderLocalFolderId",
+                name: "IX_UploadedFiles_ContainingFolderId",
                 table: "UploadedFiles",
-                column: "ContainingFolderLocalFolderId");
+                column: "ContainingFolderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UploadedFiles_FileName",
+                table: "UploadedFiles",
+                column: "FileName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UploadedFiles_LocalFolderId",
+                table: "UploadedFiles",
+                column: "LocalFolderId");
         }
 
         /// <inheritdoc />
