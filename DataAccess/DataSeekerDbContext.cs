@@ -27,6 +27,30 @@ public class DataSeekerDbContext : DbContext
         modelBuilder.Entity<LogFile>()
             .Property(e => e.TransferDirection)
             .HasConversion<string>(); // store enum as text instead of int
+        
+        //Some indexes for speedier queries
+        modelBuilder.Entity<LocalFolder>()
+            .HasIndex(f => f.ParentFolderId);
+
+        modelBuilder.Entity<LocalFolder>()
+            .HasIndex(f => f.Name);
+
+        modelBuilder.Entity<LocalFolder>()
+            .HasIndex(f => new { f.ParentFolderId, f.Name })
+            .IsUnique();
+        
+        modelBuilder.Entity<UploadedFile>()
+            .HasIndex(f => f.FolderId);
+
+        modelBuilder.Entity<UploadedFile>()
+            .HasIndex(f => f.FileName);
+        
+        modelBuilder.Entity<LogFile>()
+            .HasIndex(lf => lf.TransferDirection);
+        
+        modelBuilder.Entity<LogLine>()
+            .HasIndex(ll => ll.FileType);
+        
     }
 }
 
