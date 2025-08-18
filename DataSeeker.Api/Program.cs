@@ -16,8 +16,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataSeekerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<IFileReaderToDataService, FileReaderToDataService>();
-builder.Services.AddScoped<IFileDataParser, FileDataParser>();
+builder.Services.AddScoped<ILogFileDataService, LogFileDataService>();
 builder.Services.AddScoped<ILogIngestionService, LogIngestionService>();
 builder.Services.Configure<LogIngestOptions>(builder.Configuration.GetSection("LogIngest"));
 builder.Services.AddSingleton<LogIngester>();
@@ -68,6 +67,7 @@ app.MapPost("/ingest-logs", async (LogIngester ingester) =>
     await ingester.IngestLogs();
     return Results.Ok("Log ingestion triggered");
 });
+
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
