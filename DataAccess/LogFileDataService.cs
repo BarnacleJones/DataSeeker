@@ -1,9 +1,10 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using DataAccess.Contract;
 using Entities.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace DataAccess.Service;
+namespace DataAccess;
 
 public class LogFileDataService : ILogFileDataService
 {

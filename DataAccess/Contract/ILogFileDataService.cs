@@ -1,6 +1,6 @@
 using Entities.Models;
 
-namespace DataAccess;
+namespace DataAccess.Contract;
 
 public interface ILogFileDataService
 {

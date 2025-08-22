@@ -1,5 +1,5 @@
 using DataAccess;
-using DataAccess.Service;
+using DataAccess.Contract;
 using Microsoft.EntityFrameworkCore;
 using Service;
 using Service.Contract;
@@ -18,6 +18,7 @@ builder.Services.AddDbContext<DataSeekerDbContext>(options =>
 
 builder.Services.AddScoped<ILogFileDataService, LogFileDataService>();
 builder.Services.AddScoped<ILogIngestionService, LogIngestionService>();
+builder.Services.AddScoped<IFolderGraphService, FolderGraphService>();
 builder.Services.Configure<LogIngestOptions>(builder.Configuration.GetSection("LogIngest"));
 builder.Services.AddSingleton<LogIngester>();
 
