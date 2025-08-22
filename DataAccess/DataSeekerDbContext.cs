@@ -9,17 +9,51 @@ public class DataSeekerDbContext : DbContext
     {
     }
 
-    public DbSet<UploadLine> UploadLines { get; set; }
-    public DbSet<UploadFile> UploadFiles { get; set; }
-    public DbSet<DownloadFile> DownloadFiles { get; set; }
-    public DbSet<Folder> Folders { get; set; }
-    public DbSet<FileEntry> Files { get; set; }
+    public DbSet<LogFile> LogFiles { get; set; }
+    public DbSet<LogLine> LogLines { get; set; }
+    
+    public DbSet<UploadedFile> UploadedFiles { get; set; }
+    public DbSet<LocalFolder> LocalFolders { get; set; }
+    
+    //Mapping - todo split out
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Folder>()
-            .HasOne(f => f.Parent)
+        //self-referencing one-to-many (Folder -> SubFolders). 
+        modelBuilder.Entity<LocalFolder>()
+            .HasOne(f => f.ParentFolder)
             .WithMany(f => f.SubFolders)
-            .HasForeignKey(f => f.ParentId);
+            .HasForeignKey(f => f.ParentFolderId);
+        
+        modelBuilder.Entity<LogFile>()
+            .Property(e => e.TransferDirection)
+            .HasConversion<string>(); // store enum as text instead of int
+        
+        //Some indexes for speedier queries
+        modelBuilder.Entity<LocalFolder>()
+            .HasIndex(f => f.ParentFolderId);
+
+        modelBuilder.Entity<LocalFolder>()
+            .HasIndex(f => f.Name);
+
+        modelBuilder.Entity<LocalFolder>()
+            .HasIndex(f => new { f.ParentFolderId, f.Name })
+            .IsUnique();
+        
+        modelBuilder.Entity<UploadedFile>()
+            .HasOne(f => f.ContainingFolder)
+            .WithMany()
+            .HasForeignKey(f => f.LocalFolderId)
+            .IsRequired(false);
+        
+        modelBuilder.Entity<UploadedFile>()
+            .HasIndex(f => f.FileName);
+        
+        modelBuilder.Entity<LogFile>()
+            .HasIndex(lf => lf.TransferDirection);
+        
+        modelBuilder.Entity<LogLine>()
+            .HasIndex(ll => ll.FileType);
+        
     }
 }
 

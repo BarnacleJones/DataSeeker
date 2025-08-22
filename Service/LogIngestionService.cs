@@ -1,7 +1,10 @@
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DataAccess;
+using DataAccess.Contract;
+using Entities.Models;
 using Service.Contract;
 
 namespace Service
@@ -10,24 +13,22 @@ namespace Service
     {
         private readonly ILogger<LogIngestionService> _logger;
         private readonly IOptions<LogIngestOptions> _options;
-        private readonly IFileReaderToDataService _fileReaderToDataService;
-        private readonly IFileDataParser _fileDataParser;
+        private readonly ILogFileDataService _logFileDataService;
 
         public LogIngestionService(
             ILogger<LogIngestionService> logger,
             IOptions<LogIngestOptions> options, 
-            IFileReaderToDataService fileReaderToDataService, 
-            IFileDataParser fileDataParser)
+            ILogFileDataService logFileDataService)
         {
             _logger = logger;
             _options = options;
-            _fileReaderToDataService = fileReaderToDataService;
-            _fileDataParser = fileDataParser;
+            _logFileDataService = logFileDataService;
         }
 
         public async Task IngestLogsAsync()
         {
             _logger.LogInformation("Log ingestion triggered.");
+            var timer = Stopwatch.StartNew();
 
             var dir = _options.Value.LogDirectory;
             var processedDir = Path.Combine(dir, "processed");
@@ -40,7 +41,7 @@ namespace Service
             {
                 try
                 {
-                    await _fileReaderToDataService.ProcessUploadAsync(filePath);
+                    await _logFileDataService.ProcessLogFileAsync(filePath, TransferDirection.Upload);
                     MoveToProcessed(filePath, processedDir);
                 }
                 catch (Exception ex)
@@ -53,7 +54,7 @@ namespace Service
             {
                 try
                 {
-                    await _fileReaderToDataService.ProcessDownloadAsync(filePath);
+                    await _logFileDataService.ProcessLogFileAsync(filePath, TransferDirection.Download);
                     MoveToProcessed(filePath, processedDir);
                 }
                 catch (Exception ex)
@@ -61,8 +62,8 @@ namespace Service
                     _logger.LogError(ex, "Error processing download file {File}", filePath);
                 }
             }
-            
-            await _fileDataParser.Parse();
+            timer.Stop();
+            _logger.LogInformation("Log ingestion triggered in {Elapsed}.", timer.Elapsed);
         }
 
         private void MoveToProcessed(string originalPath, string processedDir)
