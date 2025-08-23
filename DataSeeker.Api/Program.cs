@@ -69,6 +69,9 @@ app.MapPost("/ingest-logs", async (LogIngester ingester) =>
     return Results.Ok("Log ingestion triggered");
 });
 
+app.UseStaticFiles(); // serve Blazor assets
+app.MapFallbackToFile("index.html"); // SPA fallback
+
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)

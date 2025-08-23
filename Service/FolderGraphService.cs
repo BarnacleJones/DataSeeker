@@ -26,7 +26,7 @@ namespace Service
             {
                 graph.Nodes.Add(new NodeDto
                 {
-                    Id = folder.Id.ToString(),
+                    Id = folder.LocalFolderId.ToString(),
                     Label = folder.Name
                 });
             }
@@ -39,7 +39,7 @@ namespace Service
                     graph.Links.Add(new LinkDto
                     {
                         Source = folder.ParentFolderId.Value.ToString(),
-                        Target = folder.Id.ToString(),
+                        Target = folder.LocalFolderId.ToString(),
                         Value = 1
                     });
                 }

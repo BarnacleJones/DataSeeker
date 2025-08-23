@@ -46,7 +46,10 @@ public class DataSeekerDbContext : DbContext
             .IsRequired(false);
         
         modelBuilder.Entity<UploadedFile>()
-            .HasIndex(f => f.FileName);
+            .HasOne(f => f.ContainingFolder)
+            .WithMany(f => f.UploadedFiles)
+            .HasForeignKey(f => f.LocalFolderId)
+            .IsRequired(false);
         
         modelBuilder.Entity<LogFile>()
             .HasIndex(lf => lf.TransferDirection);

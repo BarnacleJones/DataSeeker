@@ -1,0 +1,36 @@
+# This is a generated file. Not intended for manual editing.
+version: "3.9"
+services:
+  api:
+    build:
+      context: "/home/ben/Projects/DataSeeker"
+      dockerfile: "Dockerfile"
+      target: "build"
+      args:
+        BUILD_CONFIGURATION: "Debug"
+    command: []
+    entrypoint:
+    - "/opt/JetBrains/RiderDebuggerTools/linux-x64/JetBrains.Debugger.Worker"
+    - "--runtimeconfig"
+    - "/opt/JetBrains/RiderDebuggerTools/JetBrains.Debugger.Worker.runtimeconfig.json"
+    - "--mode=server"
+    - "--frontend-port=57000"
+    - "--backend-port=57200"
+    - "--roslyn-worker-port=57403"
+    - "--timeout=60"
+    environment:
+      RIDER_DEBUGGER_LOG_DIR: "/var/opt/JetBrains/RiderDebuggerTools"
+      RESHARPER_LOG_CONF: "/etc/opt/JetBrains/RiderDebuggerTools/backend-log.xml"
+    image: "dataseeker.api:dev"
+    ports:
+    - "127.0.0.1:57003:57000"
+    - "127.0.0.1:57203:57200"
+    - "127.0.0.1:57403:57403"
+    volumes:
+    - "/home/ben/Projects/DataSeeker/DataSeeker.Api:/app:rw"
+    - "/home/ben/Projects/DataSeeker:/src-1:rw"
+    - "/home/ben/.nuget/packages:/root/.nuget/packages"
+    - "/home/ben/.local/share/JetBrains/RiderRemoteDebugger/2025.1.5/Linux64:/opt/JetBrains/RiderDebuggerTools"
+    - "/home/ben/JetBrains Rider-2025.1.4/bin/backend-log.xml:/etc/opt/JetBrains/RiderDebuggerTools/backend-log.xml"
+    - "/home/ben/.cache/JetBrains/Rider2025.1/log/DebuggerWorker/JetBrains.Debugger.Worker.2025_8_23_11_16_50:/var/opt/JetBrains/RiderDebuggerTools:rw"
+    working_dir: "/app"
